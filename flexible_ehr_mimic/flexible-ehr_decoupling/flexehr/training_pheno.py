@@ -165,7 +165,7 @@ class Trainer():
                 # random sampler
                 if_main = False
                 y_pred = self.model(data, if_main=if_main)
-                print(y_true.shape, y_pred.shape)
+                #print(y_true.shape, y_pred.shape)
                 iter_loss_rand = self.loss_f(y_pred, y_true, 
                                              self.model.training, if_main, storer)
                 
@@ -242,20 +242,20 @@ class Trainer():
                 # only validate on balanced batch
                 y_trues_bal += [array(y_bal)]
                 y_preds_bal += [array(y_pred_bal)]
-                
+
                 y_trues_rand += [array(y_true)]
                 y_preds_rand += [array(y_pred)]
                 
                 if self.p_bar:
                     t.set_postfix(loss=iter_loss.item())
                     t.update()
-
+                
         y_preds_bal = np.concatenate(y_preds_bal)
         y_trues_bal = np.concatenate(y_trues_bal)
         
         y_trues_rand = np.concatenate(y_trues_rand)
         y_preds_rand = np.concatenate(y_preds_rand)
-        
+
         #y_trues = data_loader.dataset.Y
 
         metrics = self.compute_metrics(y_preds_bal, y_trues_bal, if_bal=True)
@@ -274,16 +274,36 @@ class Trainer():
             y_true = array(y_true)
 
         if y_pred.ndim == 2:
-            y_pred = y_pred[:, -1]
-            y_true = y_true[:, -1]
+            
+            if y_pred.shape[-1] == 2:
+                y_pred = y_pred[:, -1]
+                y_true = y_true[:, -1]
 
-        metrics = {}
-        if if_bal:
-            metrics['auroc_bal'] = [roc_auc_score(y_true, y_pred)]
-        else:
-            metrics['auroc_rand'] = [roc_auc_score(y_true, y_pred)]
-        
-        return metrics
+                metrics = {}
+                if if_bal:
+                    metrics['auroc_bal'] = [roc_auc_score(y_true, y_pred)]
+                else:
+                    metrics['auroc_rand'] = [roc_auc_score(y_true, y_pred)]
+
+                return metrics
+            
+            elif y_pred.shape[-1] == 25:
+                auroc_allpheno = []
+                for pheno_idx in range(y_pred.shape[-1]):
+                    y_pred_ = y_pred[:, pheno_idx]
+                    y_true_ = y_true[:, pheno_idx]
+                    auroc = roc_auc_score(y_true_, y_pred_)
+                    auroc_allpheno.append(auroc)
+
+                macro_mean = np.mean(auroc_allpheno)
+                metrics = {}
+                if if_bal:
+                    metrics['auroc_bal'] = [macro_mean]
+                else:
+                    metrics['auroc_rand'] = [macro_mean]
+
+                return metrics
+                
 
 
 class LossesLogger(object):

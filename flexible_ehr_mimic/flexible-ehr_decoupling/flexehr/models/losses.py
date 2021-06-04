@@ -88,9 +88,10 @@ class BCEWithLogitsLoss(BaseLoss):
         """
         storer = self._pre_call(is_train, storer)
         
-        criterion = nn.BCEWithLogitsLoss()
-        loss = criterion(y_pred, y_true)
-
+        #criterion = nn.BCEWithLogitsLoss()
+        #loss = criterion(y_pred, y_true)
+        loss = F.binary_cross_entropy_with_logits(y_pred, y_true)
+        
         if storer is not None:
             if is_train:
                 storer['train_loss'].append(loss.item())

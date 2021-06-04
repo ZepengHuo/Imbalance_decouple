@@ -171,7 +171,7 @@ class Trainer():
                 y_pos = y_pos.to(self.device)
                 X_neg = X_neg.to(self.device)
                 y_neg = y_neg.to(self.device)
-                print(data, y_true, X_pos, y_pos, X_neg, y_neg)
+                print(data.shape, y_true.shape, X_pos.shape, y_pos.shape, X_neg.shape, y_neg.shape)
                 
                 # random sampler
                 if_main = False
