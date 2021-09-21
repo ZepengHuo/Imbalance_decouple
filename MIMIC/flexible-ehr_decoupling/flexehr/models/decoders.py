@@ -40,10 +40,11 @@ class DecoderBinary(nn.Module):
 
     def forward(self, h, if_main=False):
         if if_main:
-            y = self.fc_main(h).squeeze().sigmoid()
+            #y = self.fc_main(h).squeeze().sigmoid()
+            y = self.fc_main(h).squeeze()
         else:
-            y = self.fc(h).squeeze().sigmoid()
-
+            #y = self.fc(h).squeeze().sigmoid()
+            y = self.fc(h).squeeze()
         return y
 
     

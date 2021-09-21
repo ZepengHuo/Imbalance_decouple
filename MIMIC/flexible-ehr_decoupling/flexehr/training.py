@@ -3,15 +3,18 @@
 import logging
 import numpy as np
 import os
+from numpy.core.numeric import False_
 import torch
 
 from collections import defaultdict
-from sklearn.metrics import roc_auc_score
+from sklearn.metrics import roc_auc_score, average_precision_score, precision_recall_curve, roc_curve, brier_score_loss
+from sklearn.calibration import calibration_curve
 from timeit import default_timer
 from tqdm import trange
 
 from flexehr.utils.modelIO import save_model
 from utils.helpers import array
+from matplotlib import pyplot
 
 import itertools 
 
@@ -65,6 +68,7 @@ class Trainer():
         self.p_bar = p_bar
         self.logger = logger
         self.args = args
+        self.weight = None # weight for loss function
 
         self.max_v_auroc = -np.inf
         if self.optimizer is not None:
@@ -95,6 +99,25 @@ class Trainer():
         
         for epoch in range(epochs):
             storer = defaultdict(list)
+
+            # freeze backbone, lower lr for classifier after first epoch
+            if self.args.annealing_lr and epoch == 1:
+                for p in self.model.gru.parameters():
+                        p.requires_grad = False
+            
+                for g in self.optimizer.param_groups:
+                    g['lr'] = g['lr'] * self.args.annealing_lr
+                    
+
+                if self.args.train_rule == 'DRW':
+                    
+                    idx = epoch // 1
+                    betas = [0, 0.9999]
+                    effective_num = 1.0 - np.power(betas[idx], self.loss_f[-1].cls_num_list)
+                    per_cls_weights = (1.0 - betas[idx]) / np.array(effective_num)
+                    per_cls_weights = per_cls_weights / np.sum(per_cls_weights) * len(self.loss_f[-1].cls_num_list)
+                    per_cls_weights = torch.FloatTensor(per_cls_weights).cuda(self.args.gpu_num)
+                    self.weight = per_cls_weights                
             
             self.model.train()
             t_loss = self._train_epoch(train_loader_pos, 
@@ -106,12 +129,15 @@ class Trainer():
             v_loss = self._valid_epoch(valid_loader_pos, 
                                        valid_loader_neg, 
                                        valid_loader, 
+                                       epoch, 
                                        storer)
 
             self.logger.info(f'Train loss {t_loss:.4f}')
             self.logger.info(f'Valid loss {v_loss:.4f}')
             self.logger.info(f'Valid bal auroc {storer["auroc_bal"][0]:.4f}')
             self.logger.info(f'Valid rand auroc {storer["auroc_rand"][0]:.4f}')
+            self.logger.info(f'Valid bal auprc {storer["auprc_bal"][0]:.4f}')
+            self.logger.info(f'Valid rand auprc {storer["auprc_rand"][0]:.4f}')
             self.losses_logger.log(epoch, storer)
 
             if storer['auroc_bal'][0] > self.max_v_auroc:
@@ -158,34 +184,45 @@ class Trainer():
                 X_neg = X_neg.to(self.device)
                 y_neg = y_neg.to(self.device)
                 #print(data.shape, y_true.shape, X_pos.shape, y_pos.shape, X_neg.shape, y_neg.shape)
+                
+                
+                # balanced sampler
+                if_main = True
+                y_pred_neg = self.model(X_neg, if_main)
+                
+                iter_loss_neg = self.loss_f[self.args.bal_ldam](y_pred_neg, y_neg, 
+                                             self.model.training, if_main, self.weight, storer)
+
+                y_pred_pos = self.model(X_pos, if_main=if_main)
+                
+                iter_loss_pos = self.loss_f[self.args.bal_ldam](y_pred_pos, y_pos, 
+                                             self.model.training, if_main, self.weight, storer)
+                
 
                 # random sampler
                 if_main = False
                 y_pred = self.model(data, if_main=if_main)
 
                 iter_loss_rand = self.loss_f[self.args.rand_ldam](y_pred, y_true, 
-                                             self.model.training, if_main, storer)
+                                             self.model.training, if_main, self.weight, storer)
                 #print(y_pred)
                 
-                # balanced sampler
-                if_main = True
-                y_pred_pos = self.model(X_pos, if_main=if_main)
-                
-                iter_loss_pos = self.loss_f[self.args.bal_ldam](y_pred_pos, y_pos, 
-                                             self.model.training, if_main, storer)
-                y_pred_neg = self.model(X_neg, if_main)
-                
-                iter_loss_neg = self.loss_f[self.args.bal_ldam](y_pred_neg, y_neg, 
-                                             self.model.training, if_main, storer)
-
                 #iter_loss_balance = iter_loss_pos * self.model.coef_pos.expand_as(iter_loss_pos) + \
                 #                    iter_loss_neg * self.model.coef_neg.expand_as(iter_loss_neg)
+                
+                coef_neg = 1-self.model.coef_pos
+                coef_neg = coef_neg.clone().detach().requires_grad_(True)
+                
                 iter_loss_balance = iter_loss_pos * self.model.coef_pos.expand_as(iter_loss_pos) + \
-                                    iter_loss_neg * torch.tensor(1-self.model.coef_pos).expand_as(iter_loss_neg)
+                                    iter_loss_neg * coef_neg.expand_as(iter_loss_neg)
+                
+                
+                rand_loss_r = 1-self.model.bal_loss_r
+                rand_loss_r = rand_loss_r.clone().detach().requires_grad_(True)
                 
                 #iter_loss = iter_loss_rand * self.model.rand_loss_r.expand_as(iter_loss_rand) + \
                 #            iter_loss_balance * self.model.bal_loss_r.expand_as(iter_loss_balance)
-                iter_loss = iter_loss_rand * torch.tensor(1-self.model.bal_loss_r).expand_as(iter_loss_rand) + \
+                iter_loss = iter_loss_rand * rand_loss_r.expand_as(iter_loss_rand) + \
                             iter_loss_balance * self.model.bal_loss_r.expand_as(iter_loss_balance)
 
 
@@ -204,7 +241,7 @@ class Trainer():
         return epoch_loss / len(data_loader)
 
     def _valid_epoch(self, data_loader_pos, data_loader_neg, 
-                     data_loader, storer=defaultdict(list)):
+                     data_loader, epoch, storer=defaultdict(list)):
         """Trains the model on the validation set for one epoch."""
         epoch_loss = 0.
         
@@ -245,19 +282,19 @@ class Trainer():
                 y_pred = self.model(data, if_main)
                 
                 iter_loss_rand = self.loss_f[self.args.rand_ldam](
-                    y_pred, y_true, self.model.training, if_main, storer)
+                    y_pred, y_true, self.model.training, if_main, self.weight, storer)
                 
                 
                 if_main = True
                 y_pred_pos = self.model(X_pos, if_main)
                 
                 iter_loss_pos = self.loss_f[self.args.bal_ldam](y_pred_pos, y_pos, 
-                                             self.model.training, if_main, storer)
+                                             self.model.training, if_main, self.weight, storer)
                 
                 y_pred_neg = self.model(X_neg, if_main)
                 
                 iter_loss_neg = self.loss_f[self.args.bal_ldam](y_pred_neg, y_neg, 
-                                             self.model.training, if_main, storer)
+                                             self.model.training, if_main, self.weight, storer)
                 
                 iter_loss_balance = iter_loss_pos * coef_pos + iter_loss_neg * coef_neg
                 
@@ -288,15 +325,46 @@ class Trainer():
         
         #y_trues = data_loader.dataset.Y
 
-        metrics = self.compute_metrics(y_preds_bal, y_trues_bal, if_bal=True)
+        metrics = self.compute_metrics_auroc(y_preds_bal, y_trues_bal, if_bal=True)
         storer.update(metrics)
         
-        metrics = self.compute_metrics(y_preds_rand, y_trues_rand, if_bal=False)
+        metrics = self.compute_metrics_auroc(y_preds_rand, y_trues_rand, if_bal=False)
         storer.update(metrics)
+        
+        metrics = self.compute_metrics_auprc(y_preds_bal, y_trues_bal, if_bal=True)
+        storer.update(metrics)
+        
+        metrics = self.compute_metrics_auprc(y_preds_rand, y_trues_rand, if_bal=False)
+        storer.update(metrics)
+        
+        
+        self.SavePlot_auroc(y_preds_bal, y_trues_bal, epoch, if_bal=True)
+        self.SavePlot_auroc(y_preds_rand, y_trues_rand, epoch, if_bal=False)
+        
+        self.SavePlot_auprc(y_preds_bal, y_trues_bal, epoch, if_bal=True)
+        self.SavePlot_auprc(y_preds_rand, y_trues_rand, epoch, if_bal=False)
+        
+        self.SavePlot_brier(y_preds_bal, y_trues_bal, epoch, if_bal=True)
+        self.SavePlot_brier(y_preds_rand, y_trues_rand, epoch, if_bal=False)
+        
+        self.SavePlot_calibration(y_preds_bal, y_trues_bal, epoch, if_bal=True)
+        self.SavePlot_calibration(y_preds_rand, y_trues_rand, epoch, if_bal=False)
+        
+        
+        if not os.path.isdir('saved'):
+            os.makedirs('saved')
+        with open(f'saved/y_preds_bal{epoch}.npy', 'wb') as f:
+            np.save(f, y_preds_bal)
+        with open(f'saved/y_trues_bal{epoch}.npy', 'wb') as f:
+            np.save(f, y_trues_bal)
+        with open(f'saved/y_preds_rand{epoch}.npy', 'wb') as f:
+            np.save(f, y_preds_rand)
+        with open(f'saved/y_trues_rand{epoch}.npy', 'wb') as f:
+            np.save(f, y_trues_rand)    
 
         return epoch_loss / len(data_loader)
 
-    def compute_metrics(self, y_pred, y_true, if_bal=False):
+    def compute_metrics_auroc(self, y_pred, y_true, if_bal=False):
         """Compute metrics for predicted vs true labels."""
         if not isinstance(y_pred, np.ndarray):
             y_pred = array(y_pred)
@@ -314,6 +382,108 @@ class Trainer():
             metrics['auroc_rand'] = [roc_auc_score(y_true, y_pred)]
         
         return metrics
+    
+    def compute_metrics_auprc(self, y_pred, y_true, if_bal=False):
+        """Compute metrics for predicted vs true labels."""
+        if not isinstance(y_pred, np.ndarray):
+            y_pred = array(y_pred)
+        if not isinstance(y_true, np.ndarray):
+            y_true = array(y_true)
+
+        if y_pred.ndim == 2:
+            y_pred = y_pred[:, -1]
+            y_true = y_true[:, -1]
+
+        metrics = {}
+        if if_bal:
+            metrics['auprc_bal'] = [average_precision_score(y_true, y_pred)]
+        else:
+            metrics['auprc_rand'] = [average_precision_score(y_true, y_pred)]
+        
+        return metrics
+    
+    def SavePlot_auroc(self, y_pred, y_true, epoch, if_bal=False):
+        y_true, y_pred = y_true.reshape(1,-1), y_pred.reshape(1,-1)
+        y_pred_sig = 1/(1 + np.exp(-y_pred))
+        fpr, tpr, _ = roc_curve(np.squeeze(y_true), np.squeeze(y_pred_sig))
+        fig = pyplot.figure()
+        pyplot.plot(fpr, tpr, marker='.')
+        if if_bal:
+            bal = 'bal'
+        else:
+            bal = 'rand'
+        pyplot.savefig('results/auroc'+bal+ str(epoch) +'.png')
+    
+    def SavePlot_auprc(self, y_pred, y_true, epoch, if_bal=False):
+        y_true, y_pred = y_true.reshape(1,-1), y_pred.reshape(1,-1)
+        y_pred_sig = 1/(1 + np.exp(-y_pred))
+        lr_precision, lr_recall, _ = precision_recall_curve(np.squeeze(y_true), np.squeeze(y_pred_sig))
+        fig = pyplot.figure()
+        pyplot.plot(lr_recall, lr_precision, marker='.')
+        if if_bal:
+            bal = 'bal'
+        else:
+            bal = 'rand'
+        pyplot.savefig('results/auprc'+bal+ str(epoch) +'.png')
+        
+        
+    def SavePlot_brier(self, y_pred, y_true, epoch, if_bal=False):
+        cls_num_list = self.loss_f[self.args.bal_ldam].cls_num_list
+        ratio = float(cls_num_list[1]) / np.sum(cls_num_list)
+        y_true, y_pred = y_true.reshape(1,-1).squeeze(), y_pred.reshape(1,-1).squeeze()
+        predictions = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+        predictions_ref = [ratio] * len(predictions)
+        testy = y_true
+        BS = [brier_score_loss(testy, [y for x in range(len(testy))]) for y in predictions]
+        BS_ref = [brier_score_loss(testy, [y for x in range(len(testy))]) for y in predictions_ref]
+        BS_skill = 1 - np.array(BS)/np.array(BS_ref)
+        
+        fig = pyplot.figure()
+        pyplot.plot(predictions, BS_skill)
+        if if_bal:
+            bal = 'bal'
+        else:
+            bal = 'rand'
+        pyplot.savefig('results/brier'+bal+ str(epoch) +'.png')
+        
+    def SavePlot_calibration(self, y_pred, y_true, epoch, if_bal):
+        cls_num_list = self.loss_f[self.args.bal_ldam].cls_num_list
+        ratio = float(cls_num_list[1]) / np.sum(cls_num_list)
+        y_true, y_pred = y_true.reshape(1,-1).squeeze(), y_pred.reshape(1,-1).squeeze()
+        y_pred_sig = 1/(1 + np.exp(-y_pred))
+        predictions_ref = [ratio] * len(y_pred)
+        BS = brier_score_loss(y_true, y_pred_sig)
+        BS_ref = brier_score_loss(y_true, predictions_ref)
+        BS_skill = 1 - float(BS)/BS_ref
+
+        y_true, y_pred = y_true.reshape(1,-1).squeeze(), y_pred.reshape(1,-1).squeeze()
+        fraction_of_positives, mean_predicted_value = calibration_curve(y_true, y_pred, n_bins=10, normalize=True)
+        fig = pyplot.figure()
+        pyplot.plot(mean_predicted_value, fraction_of_positives)
+        pyplot.plot([0, 1], [0, 1], "k:")
+        if if_bal:
+            bal = 'bal'
+        else:
+            bal = 'rand'
+        pyplot.title(f'Brier Skill Score {BS_skill}')
+        pyplot.savefig('results/calibration'+bal+ str(epoch) +'.png')
+
+    def ErrorRateAt95Recall1(labels, scores):
+        recall_point = 0.95
+        labels = np.asarray(labels)
+        scores = np.asarray(scores)
+        # Sort label-score tuples by the score in descending order.
+        indices = np.argsort(scores)[::-1]    #降序排列
+        sorted_labels = labels[indices]
+        sorted_scores = scores[indices]
+        n_match = sum(sorted_labels)
+        n_thresh = recall_point * n_match
+        thresh_index = np.argmax(np.cumsum(sorted_labels) >= n_thresh)
+        FP = np.sum(sorted_labels[:thresh_index] == 0)
+        TN = np.sum(sorted_labels[thresh_index:] == 0)
+        return float(FP) / float(FP + TN)
+
+
 
 
 class LossesLogger(object):

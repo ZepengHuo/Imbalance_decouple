@@ -6,9 +6,11 @@ import os
 import torch
 
 from collections import defaultdict
-from sklearn.metrics import roc_auc_score
+from sklearn.metrics import roc_auc_score, average_precision_score, precision_recall_curve, roc_curve, brier_score_loss
+from sklearn.calibration import calibration_curve
 from timeit import default_timer
 from tqdm import trange
+from matplotlib import pyplot
 
 from flexehr.utils.modelIO import save_model
 from utils.helpers import array
@@ -45,7 +47,7 @@ class Trainer():
         Logger to record info.
     """
 
-    def __init__(self, model, loss_f,
+    def __init__(self, model, loss_f, args,
                  optimizer=None,
                  device=torch.device('cpu'),
                  early_stopping=True,
@@ -61,6 +63,8 @@ class Trainer():
         self.save_dir = save_dir
         self.p_bar = p_bar
         self.logger = logger
+        self.args = args
+        self.weight = None # weight for loss function
 
         self.max_v_auroc = -np.inf
         if self.optimizer is not None:
@@ -89,16 +93,36 @@ class Trainer():
 
         for epoch in range(epochs):
             storer = defaultdict(list)
+            
+            # freeze backbone, lower lr for classifier after first epoch
+            if self.args.annealing_lr and epoch == 0:
+                #for p in self.model.gru.parameters():
+                #        p.requires_grad = False
+            
+                #for g in self.optimizer.param_groups:
+                #    g['lr'] = g['lr'] * self.args.annealing_lr
+                    
+                if self.args.train_rule == 'DRW':
+                    
+                    #idx = epoch // 1
+                    idx = 1
+                    betas = [0, 0.9999]
+                    effective_num = 1.0 - np.power(betas[idx], self.loss_f.cls_num_list)
+                    per_cls_weights = (1.0 - betas[idx]) / np.array(effective_num)
+                    per_cls_weights = per_cls_weights / np.sum(per_cls_weights) * len(self.loss_f.cls_num_list)
+                    per_cls_weights = torch.FloatTensor(per_cls_weights).cuda(self.args.gpu_num)
+                    self.weight = per_cls_weights    
 
             self.model.train()
             t_loss = self._train_epoch(train_loader, storer)
 
             self.model.eval()
-            v_loss = self._valid_epoch(valid_loader, storer)
+            v_loss = self._valid_epoch(valid_loader, epoch, storer)
 
             self.logger.info(f'Train loss {t_loss:.4f}')
             self.logger.info(f'Valid loss {v_loss:.4f}')
             self.logger.info(f'Valid auroc {storer["auroc"][0]:.4f}')
+            self.logger.info(f'Valid auprc {storer["auprc"][0]:.4f}')
             self.losses_logger.log(epoch, storer)
 
             if storer['auroc'][0] > self.max_v_auroc:
@@ -125,7 +149,7 @@ class Trainer():
 
                 y_pred = self.model(data)
                 iter_loss = self.loss_f(
-                    y_pred, y_true, self.model.training, storer)
+                    y_pred, y_true, self.model.training, self.weight, storer)
                 epoch_loss += iter_loss.item()
 
                 self.optimizer.zero_grad()
@@ -138,7 +162,7 @@ class Trainer():
 
         return epoch_loss / len(data_loader)
 
-    def _valid_epoch(self, data_loader, storer=defaultdict(list)):
+    def _valid_epoch(self, data_loader, epoch, storer=defaultdict(list)):
         """Trains the model on the validation set for one epoch."""
         epoch_loss = 0.
         y_preds = []
@@ -151,7 +175,7 @@ class Trainer():
                 y_pred = self.model(data)
                 y_preds += [array(y_pred)]
                 iter_loss = self.loss_f(
-                    y_pred, y_true, self.model.training, storer)
+                    y_pred, y_true, self.model.training, self.weight, storer)
                 epoch_loss += iter_loss.item()
 
                 if self.p_bar:
@@ -160,10 +184,29 @@ class Trainer():
 
         y_preds = np.concatenate(y_preds)
         y_trues = data_loader.dataset.Y
+        
+        if not os.path.isdir('saved'):
+            os.makedirs('saved')
+
+        with open(f'saved/y_preds_{epoch}.npy', 'wb') as f:
+            np.save(f, y_preds)
+        with open(f'saved/y_trues_{epoch}.npy', 'wb') as f:
+            np.save(f, y_trues)
+                    
 
         metrics = self.compute_metrics(y_preds, y_trues)
         storer.update(metrics)
+        
+        metrics = self.compute_metrics_auprc(y_preds, y_trues)
+        storer.update(metrics)
+        
+        self.SavePlot_auprc(y_preds, y_trues, epoch)
+        
+        self.SavePlot_auroc(y_preds, y_trues, epoch)
 
+        #self.SavePlot_brier(y_preds, y_trues, epoch)
+        self.SavePlot_calibration(y_preds, y_trues, epoch)
+        
         return epoch_loss / len(data_loader)
 
     def compute_metrics(self, y_pred, y_true):
@@ -184,10 +227,80 @@ class Trainer():
         
         return metrics
 
+    def compute_metrics_auprc(self, y_pred, y_true):
+            """Compute metrics for predicted vs true labels."""
+            if not isinstance(y_pred, np.ndarray):
+                y_pred = array(y_pred)
+            if not isinstance(y_true, np.ndarray):
+                y_true = array(y_true)
+
+            if y_pred.ndim == 2:
+                y_pred = y_pred[:, -1]
+                y_true = y_true[:, -1]
+
+            metrics = {}
+            if np.isnan(np.sum(y_pred)):
+                print('y_predc', y_pred)
+            metrics['auprc'] = [average_precision_score(y_true, y_pred)]
+            
+            return metrics
+        
+    def SavePlot_auroc(self, y_pred, y_true, epoch):
+        y_true, y_pred = y_true.reshape(1,-1), y_pred.reshape(1,-1)
+        y_pred_sig = 1/(1 + np.exp(-y_pred))
+        fpr, tpr, _ = roc_curve(np.squeeze(y_true), np.squeeze(y_pred_sig))
+        fig = pyplot.figure()
+        pyplot.plot(fpr, tpr, marker='.')
+        pyplot.savefig('results/auroc' + str(epoch) +'.png')    
+        
+    def SavePlot_auprc(self, y_pred, y_true, epoch):
+        y_true, y_pred = y_true.reshape(1,-1), y_pred.reshape(1,-1)
+        y_pred_sig = 1/(1 + np.exp(-y_pred))
+        lr_precision, lr_recall, _ = precision_recall_curve(np.squeeze(y_true), np.squeeze(y_pred_sig))
+        fig = pyplot.figure()
+        pyplot.plot(lr_recall, lr_precision, marker='.')
+        
+        pyplot.savefig('results/auprc'+ str(epoch) +'.png')
+        
+        
+    def SavePlot_brier(self, y_pred, y_true, epoch):
+        cls_num_list = self.loss_f.cls_num_list
+        ratio = float(cls_num_list[1]) / np.sum(cls_num_list)
+        y_true, y_pred = y_true.reshape(1,-1).squeeze(), y_pred.reshape(1,-1).squeeze()
+        y_pred_sig = 1/(1 + np.exp(-y_pred))
+        predictions_ref = [ratio] * len(y_pred)
+        indices = np.argsort(y_pred_sig)
+        y_pred_sig = y_pred_sig[indices]
+        y_true = y_true[indices]
+        BS = [brier_score_loss([target], [pred]) for (target, pred) in zip(y_true, y_pred_sig)]
+        BS_ref = [brier_score_loss(y_true, [y for x in range(len(y_true))]) for y in predictions_ref]
+        
+        BS_skill = 1 - np.array(BS)/np.array(BS_ref)
+        fig = pyplot.figure()
+        pyplot.plot(y_pred_sig, BS_skill)
+        pyplot.savefig('results/brier'+ str(epoch) +'.png')
+        
+        
+    def SavePlot_calibration(self, y_pred, y_true, epoch):
+        cls_num_list = self.loss_f.cls_num_list
+        ratio = float(cls_num_list[1]) / np.sum(cls_num_list)
+        y_true, y_pred = y_true.reshape(1,-1).squeeze(), y_pred.reshape(1,-1).squeeze()
+        y_pred_sig = 1/(1 + np.exp(-y_pred))
+        predictions_ref = [ratio] * len(y_pred)
+        BS = brier_score_loss(y_true, y_pred_sig)
+        BS_ref = brier_score_loss(y_true, predictions_ref)
+        BS_skill = 1 - float(BS)/BS_ref
+        
+        fraction_of_positives, mean_predicted_value = calibration_curve(y_true, y_pred, n_bins=10, normalize=True)
+        fig = pyplot.figure()
+        pyplot.plot(mean_predicted_value, fraction_of_positives)
+        pyplot.plot([0, 1], [0, 1], "k:")
+        pyplot.title(f'Brier Skill Score {BS_skill}')
+        pyplot.savefig('results/calibration'+ str(epoch) +'.png')
 
 class LossesLogger(object):
     """
-    Class definition for objects to write data to log files in a
+    Class definition for objects to write bata to log files in a
     form which is then easy to be plotted.
     """
 

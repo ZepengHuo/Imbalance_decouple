@@ -38,8 +38,8 @@ class DecoderBinary(nn.Module):
         self.fc = nn.Linear(hidden_dim, 1)
 
     def forward(self, h):
-        y = self.fc(h).squeeze().sigmoid()
-
+        #y = self.fc(h).squeeze().sigmoid()
+        y = self.fc(h).squeeze()
         return y
 
 class DecoderMulticlass(nn.Module):

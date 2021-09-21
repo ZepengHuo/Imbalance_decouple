@@ -1,15 +1,19 @@
 #!/bin/bash
 
-for z in 3 10 30 100 300;
+
+# python main.py gru ../flexible-ehr/data/root_dicts --epochs 5 --g 2 --lr 0.001 --p-dropout 0.5 -rand_ldam 1 -bal_ldam 1 -train_rule DRW
+
+#:'
+for r in 0;
 do
-    for H in 0 1;
+    for b in 2;
     do
-        for b in 0 1;
-        do
-            echo $z 
-            echo $H
-            echo $b
-            python main.py gru ../flexible-ehr/data/root_dicts --epochs 5 --g 2 --lr 0.001 --p-dropout 0.5 -s_constant $z -rand_ldam $H -bal_ldam $b
-        done
+        echo $r
+        echo $b
+        python main.py gru ../flexible-ehr/data/root_dicts --epochs 5 --g 2 --lr 0.001 --p-dropout 0.5 -rand_ldam $r -bal_ldam $b -annealing_lr 0.1 -train_rule DRW -bs 400
     done
 done
+
+#'
+
+

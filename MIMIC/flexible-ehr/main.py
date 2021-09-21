@@ -10,7 +10,7 @@ import torch
 from flexehr.training import Trainer
 from flexehr.training_pheno import Trainer as Trainer_pheno
 from flexehr.utils.modelIO import load_metadata, load_model, save_model
-from flexehr.models.losses import BCE, BCEWithLogitsLoss, LDAMLoss, LDAMLoss_
+from flexehr.models.losses import BCE, BCEWithLogitsLoss, LDAMLoss, LDAMLoss_, Focal_loss
 from flexehr.models.models import MODELS, init_model
 from utils.datasets import get_dataloaders
 from utils.helpers import (get_n_param, new_model_dir, set_seed,
@@ -50,7 +50,7 @@ def parse_arguments(args_to_parse):
                          type=int, default=0,
                          help='Random seed. `None` for stochastic behavior.')
     general.add_argument('-g', '--gpu_num',
-                         type=int, default=1,
+                         type=int, default=5,
                          help='which gpu device to use')
 
     # Learning options
@@ -70,6 +70,12 @@ def parse_arguments(args_to_parse):
     training.add_argument('--early-stopping',
                           type=int, default=5,
                           help='Epochs before early stopping.')
+    training.add_argument('-train_rule',
+                          type=str, default='DRW', 
+                          help='if delay reweighting or not')
+    training.add_argument('-annealing_lr',
+                          type=float, default=0.1,
+                          help='ratio of learning rate to lower to')
 
     # Model options
     model = parser.add_argument_group('Model specfic options')
@@ -175,10 +181,12 @@ def main(args):
 
         # Training
         if args.model_type != 'pheno':
-            loss_f = BCE()
+            #loss_f = BCE()
             #loss_f = LDAMLoss_(cls_num_list=cls_num_list, max_m=0.5, s=30)
+            loss_f = Focal_loss(cls_num_list=cls_num_list)
+            
             trainer = Trainer(
-                model, loss_f, optimizer,
+                model, loss_f, args, optimizer,
                 device=device, logger=logger, save_dir=model_dir, p_bar=args.p_bar)
         else:
             loss_f = BCEWithLogitsLoss()

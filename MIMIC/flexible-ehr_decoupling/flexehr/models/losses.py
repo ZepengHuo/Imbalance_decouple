@@ -41,7 +41,7 @@ class BCE(BaseLoss):
         """Compute the binary cross entropy loss."""
         super().__init__()
 
-    def __call__(self, y_pred, y_true, is_train, if_main, storer):
+    def __call__(self, y_pred, y_true, is_train, if_main, weight, storer):
         """Binary cross entropy loss function.
 
         Parameters
@@ -56,8 +56,10 @@ class BCE(BaseLoss):
         storer: collections.defaultdict
         """
         storer = self._pre_call(is_train, storer)
-        
-        loss = F.binary_cross_entropy(y_pred, y_true)
+
+        self.weight = weight
+        #loss = F.binary_cross_entropy(y_pred, y_true)
+        loss = F.binary_cross_entropy_with_logits(y_pred, y_true)
 
         if storer is not None:
             if is_train:
@@ -67,13 +69,52 @@ class BCE(BaseLoss):
 
         return loss
 
+class Focal_loss(BaseLoss):
+    def __init__(self):
+        """Compute the binary cross entropy loss."""
+        super().__init__()
+
+    def __call__(self, y_pred, y_true, is_train, if_main, weight, storer):
+        """Binary cross entropy loss function.
+
+        Parameters
+        ----------
+        y_pred : torch.Tensor
+
+        y_true : torch.Tensor
+
+        is_trin : bool
+            Whether model is training.
+
+        storer: collections.defaultdict
+        """
+        self.gamma = 2.
+        
+        storer = self._pre_call(is_train, storer)
+
+        self.weight = weight
+        #loss = F.binary_cross_entropy(y_pred, y_true)
+        BCE_loss = F.binary_cross_entropy_with_logits(y_pred, y_true)
+        
+        pt = torch.exp(-BCE_loss) # prevents nans when probability 0
+        #focal_loss = self.alpha * (1-pt)**self.gamma * BCE_loss
+        focal_loss = (1-pt)**self.gamma * BCE_loss
+        loss = focal_loss.mean()
+
+        if storer is not None:
+            if is_train:
+                storer['train_loss'].append(loss.item())
+            else:
+                storer['valid_loss'].append(loss.item())
+
+        return loss
     
 class BCEWithLogitsLoss(BaseLoss):
     def __init__(self):
         """Compute the binary cross entropy loss."""
         super().__init__()
 
-    def __call__(self, y_pred, y_true, is_train, if_main, storer):
+    def __call__(self, y_pred, y_true, is_train, if_main, weight, storer):
         """Binary cross entropy loss function.
 
         Parameters
@@ -88,7 +129,7 @@ class BCEWithLogitsLoss(BaseLoss):
         storer: collections.defaultdict
         """
         storer = self._pre_call(is_train, storer)
-        
+        self.weight = weight
         #criterion = nn.BCEWithLogitsLoss()
         #loss = criterion(y_pred, y_true)
         loss = F.binary_cross_entropy_with_logits(y_pred, y_true)
@@ -123,11 +164,12 @@ class LDAMLoss(nn.Module):
         x_m = x - batch_m
     
         output = torch.where(index, x_m, x)
-        return F.cross_entropy(self.s*output, target, weight=self.weight)
+        return F.cross_entropy(self.s*output, target)
 
 class LDAMLoss_(BaseLoss):
     def __init__(self, cls_num_list, max_m=0.5, weight=None, s=30):
         super(LDAMLoss_, self).__init__()
+        self.cls_num_list = cls_num_list
         m_list = 1.0 / np.sqrt(np.sqrt(cls_num_list))
         m_list = m_list * (max_m / np.max(m_list))
         m_list = torch.cuda.FloatTensor(m_list)
@@ -136,7 +178,7 @@ class LDAMLoss_(BaseLoss):
         self.s = s
         self.weight = weight
 
-    def __call__(self, x, target, is_train, if_main, storer):
+    def __call__(self, x, target, is_train, if_main, weight, storer):
         x, target = x.reshape(-1,), target.reshape(-1,)
         storer = self._pre_call(is_train, storer)
 
@@ -154,7 +196,7 @@ class LDAMLoss_(BaseLoss):
     
         output = torch.where(index, x_m, x)
 
-        loss = F.cross_entropy(self.s*output, target.squeeze().long(), weight=self.weight)
+        loss = F.cross_entropy(self.s*output, target.squeeze().long(), weight=weight)
 
         if storer is not None:
             if is_train:
