@@ -123,6 +123,7 @@ class Trainer():
             t_loss = self._train_epoch(train_loader_pos, 
                                        train_loader_neg, 
                                        train_loader, 
+                                       epoch,
                                        storer)
             
             self.model.eval()
@@ -153,13 +154,16 @@ class Trainer():
         self.logger.info(f'Finished training after {delta_time:.1f} minutes.')
 
     def _train_epoch(self, data_loader_pos, data_loader_neg, data_loader
-                     , storer):
+                     , epoch, storer):
         """Trains the model on the validation set for one epoch."""
         epoch_loss = 0.
         
         
         loader_pos = iter(data_loader_pos)
         loader_neg = iter(data_loader_neg)
+
+        bal_loss_r_ls = []
+        rand_loss_r_ls = []
 
         with trange(len(data_loader)) as t:  
             i = 0
@@ -188,16 +192,16 @@ class Trainer():
                 
                 # balanced sampler
                 if_main = True
-                y_pred_neg = self.model(X_neg, if_main)
-                
-                iter_loss_neg = self.loss_f[self.args.bal_ldam](y_pred_neg, y_neg, 
-                                             self.model.training, if_main, self.weight, storer)
-
                 y_pred_pos = self.model(X_pos, if_main=if_main)
                 
                 iter_loss_pos = self.loss_f[self.args.bal_ldam](y_pred_pos, y_pos, 
                                              self.model.training, if_main, self.weight, storer)
                 
+                y_pred_neg = self.model(X_neg, if_main)
+                
+                iter_loss_neg = self.loss_f[self.args.bal_ldam](y_pred_neg, y_neg, 
+                                             self.model.training, if_main, self.weight, storer)
+
 
                 # random sampler
                 if_main = False
@@ -225,9 +229,13 @@ class Trainer():
                 iter_loss = iter_loss_rand * rand_loss_r.expand_as(iter_loss_rand) + \
                             iter_loss_balance * self.model.bal_loss_r.expand_as(iter_loss_balance)
 
+                rand_loss_r_ls.append(self.model.coef_pos.cpu().detach().numpy())
+                bal_loss_r_ls.append(self.model.bal_loss_r.cpu().detach().numpy())
 
-
-                #print(self.model.coef_pos, self.model.coef_neg)
+                #print(self.model.coef_pos, coef_neg)
+                #print(rand_loss_r, self.model.bal_loss_r)
+                #print(rand_loss_r, coef_neg)
+                #print(self.model.bal_loss_r, self.model.coef_pos)
                 epoch_loss += iter_loss.item()
 
                 self.optimizer.zero_grad()
@@ -237,6 +245,18 @@ class Trainer():
                 if self.p_bar:
                     t.set_postfix(loss=iter_loss.item())
                     t.update()
+                    
+        rand_loss_r_ls = np.array(rand_loss_r_ls)
+        bal_loss_r_ls = np.array(bal_loss_r_ls)    
+        
+        if not os.path.isdir('saved'):
+            os.makedirs('saved')
+        with open(f'saved/rand_loss_r_ls{epoch}.npy', 'wb') as f:
+            np.save(f, rand_loss_r_ls, allow_pickle=True)
+        with open(f'saved/bal_loss_r_ls{epoch}.npy', 'wb') as f:
+            np.save(f, bal_loss_r_ls, allow_pickle=True)
+
+
                 
         return epoch_loss / len(data_loader)
 

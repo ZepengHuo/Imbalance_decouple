@@ -1,0 +1,760 @@
+Loading data for mcnamara Model Fold 1
+Data Loaded at 1572557498 
+LR mcnamara Model Data B Fold 1
+
+  ROC curve
+
+    Area under curve:
+     0.8788571 
+
+    Curve for scores from  0.0001497355  to  0.984533 
+    ( can be plotted with plot(x) )
+
+LR mcnamara Model Data C Fold 1
+
+  ROC curve
+
+    Area under curve:
+     0.8797584 
+
+    Curve for scores from  0.0001319108  to  0.9785889 
+    ( can be plotted with plot(x) )
+
+GLM mcnamara Model Data B Fold 1
+
+  ROC curve
+
+    Area under curve:
+     0.8778732 
+
+    Curve for scores from  0.0003164242  to  0.9740675 
+    ( can be plotted with plot(x) )
+
+GLM mcnamara Model Data C Fold 1
+
+  ROC curve
+
+    Area under curve:
+     0.8787988 
+
+    Curve for scores from  0.000355937  to  0.9727103 
+    ( can be plotted with plot(x) )
+
+XGB mcnamara Model Data B Fold 1
+
+  ROC curve
+
+    Area under curve:
+     0.8869059 
+
+    Curve for scores from  0.0001105995  to  0.983832 
+    ( can be plotted with plot(x) )
+
+XGB mcnamara Model Data C Fold 1
+
+  ROC curve
+
+    Area under curve:
+     0.8874767 
+
+    Curve for scores from  0.0001202559  to  0.9500177 
+    ( can be plotted with plot(x) )
+
+XGB mcnamara Model Data C, Top 10 Features Only, Fold 1
+
+  ROC curve
+
+    Area under curve:
+     0.8791037 
+
+    Curve for scores from  0.0006818326  to  0.9380397 
+    ( can be plotted with plot(x) )
+
+Loading data for expanded Model Fold 1
+Data Loaded at 1572557825 
+LR expanded Model Data B Fold 1
+
+Warning message in predict.lm(object, newdata, se.fit, scale = 1, type = if (type == :
+“prediction from a rank-deficient fit may be misleading”
+
+
+  ROC curve
+
+    Area under curve:
+     0.8907786 
+
+    Curve for scores from  0.0001057743  to  0.9957972 
+    ( can be plotted with plot(x) )
+
+LR expanded Model Data C Fold 1
+
+Warning message in predict.lm(object, newdata, se.fit, scale = 1, type = if (type == :
+“prediction from a rank-deficient fit may be misleading”
+
+
+  ROC curve
+
+    Area under curve:
+     0.890791 
+
+    Curve for scores from  8.79389e-05  to  0.9968864 
+    ( can be plotted with plot(x) )
+
+GLM expanded Model Data B Fold 1
+
+  ROC curve
+
+    Area under curve:
+     0.8898705 
+
+    Curve for scores from  0.0002429319  to  0.9905772 
+    ( can be plotted with plot(x) )
+
+GLM expanded Model Data C Fold 1
+
+  ROC curve
+
+    Area under curve:
+     0.8896918 
+
+    Curve for scores from  0.0002869832  to  0.9923793 
+    ( can be plotted with plot(x) )
+
+XGB expanded Model Data B Fold 1
+
+  ROC curve
+
+    Area under curve:
+     0.8990791 
+
+    Curve for scores from  3.68377e-05  to  0.9998673 
+    ( can be plotted with plot(x) )
+
+XGB expanded Model Data C Fold 1
+
+  ROC curve
+
+    Area under curve:
+     0.8988485 
+
+    Curve for scores from  7.207762e-05  to  0.9995818 
+    ( can be plotted with plot(x) )
+
+XGB expanded Model Data C, Top 10 Features Only, Fold 1
+
+  ROC curve
+
+    Area under curve:
+     0.8867045 
+
+    Curve for scores from  0.0004482359  to  0.9648337 
+    ( can be plotted with plot(x) )
+
+Loading data for mcnamara Model Fold 2
+Data Loaded at 1572558377 
+LR mcnamara Model Data B Fold 2
+
+  ROC curve
+
+    Area under curve:
+     0.8784179 
+
+    Curve for scores from  0.0001392916  to  0.9824579 
+    ( can be plotted with plot(x) )
+
+LR mcnamara Model Data C Fold 2
+
+  ROC curve
+
+    Area under curve:
+     0.8776427 
+
+    Curve for scores from  0.0001565278  to  0.9802714 
+    ( can be plotted with plot(x) )
+
+GLM mcnamara Model Data B Fold 2
+
+  ROC curve
+
+    Area under curve:
+     0.876793 
+
+    Curve for scores from  0.0003741499  to  0.9717453 
+    ( can be plotted with plot(x) )
+
+GLM mcnamara Model Data C Fold 2
+
+  ROC curve
+
+    Area under curve:
+     0.8762789 
+
+    Curve for scores from  0.0004469272  to  0.9687407 
+    ( can be plotted with plot(x) )
+
+XGB mcnamara Model Data B Fold 2
+
+  ROC curve
+
+    Area under curve:
+     0.8866304 
+
+    Curve for scores from  4.770685e-05  to  0.9719831 
+    ( can be plotted with plot(x) )
+
+XGB mcnamara Model Data C Fold 2
+
+  ROC curve
+
+    Area under curve:
+     0.8846725 
+
+    Curve for scores from  0.0001278535  to  0.9805829 
+    ( can be plotted with plot(x) )
+
+XGB mcnamara Model Data C, Top 10 Features Only, Fold 2
+
+  ROC curve
+
+    Area under curve:
+     0.8767999 
+
+    Curve for scores from  0.0004411204  to  0.9673715 
+    ( can be plotted with plot(x) )
+
+Loading data for expanded Model Fold 2
+Data Loaded at 1572558728 
+LR expanded Model Data B Fold 2
+
+Warning message in predict.lm(object, newdata, se.fit, scale = 1, type = if (type == :
+“prediction from a rank-deficient fit may be misleading”
+
+
+  ROC curve
+
+    Area under curve:
+     0.8900259 
+
+    Curve for scores from  9.485306e-05  to  0.9965597 
+    ( can be plotted with plot(x) )
+
+LR expanded Model Data C Fold 2
+
+Warning message in predict.lm(object, newdata, se.fit, scale = 1, type = if (type == :
+“prediction from a rank-deficient fit may be misleading”
+
+
+  ROC curve
+
+    Area under curve:
+     0.8896695 
+
+    Curve for scores from  8.106025e-05  to  0.9968727 
+    ( can be plotted with plot(x) )
+
+GLM expanded Model Data B Fold 2
+
+  ROC curve
+
+    Area under curve:
+     0.8882911 
+
+    Curve for scores from  0.0002758723  to  0.9902463 
+    ( can be plotted with plot(x) )
+
+GLM expanded Model Data C Fold 2
+
+  ROC curve
+
+    Area under curve:
+     0.8886665 
+
+    Curve for scores from  0.0003358818  to  0.9900098 
+    ( can be plotted with plot(x) )
+
+XGB expanded Model Data B Fold 2
+
+  ROC curve
+
+    Area under curve:
+     0.899267 
+
+    Curve for scores from  5.225312e-05  to  0.9997701 
+    ( can be plotted with plot(x) )
+
+XGB expanded Model Data C Fold 2
+
+  ROC curve
+
+    Area under curve:
+     0.8982547 
+
+    Curve for scores from  7.318027e-05  to  0.9997568 
+    ( can be plotted with plot(x) )
+
+XGB expanded Model Data C, Top 10 Features Only, Fold 2
+
+  ROC curve
+
+    Area under curve:
+     0.8864133 
+
+    Curve for scores from  0.0003779062  to  0.9679123 
+    ( can be plotted with plot(x) )
+
+Loading data for mcnamara Model Fold 3
+Data Loaded at 1572559309 
+LR mcnamara Model Data B Fold 3
+
+  ROC curve
+
+    Area under curve:
+     0.8770001 
+
+    Curve for scores from  0.0001407769  to  0.9829538 
+    ( can be plotted with plot(x) )
+
+LR mcnamara Model Data C Fold 3
+
+  ROC curve
+
+    Area under curve:
+     0.879482 
+
+    Curve for scores from  0.0001297702  to  0.9802099 
+    ( can be plotted with plot(x) )
+
+GLM mcnamara Model Data B Fold 3
+
+  ROC curve
+
+    Area under curve:
+     0.8758683 
+
+    Curve for scores from  0.0003467154  to  0.9747213 
+    ( can be plotted with plot(x) )
+
+GLM mcnamara Model Data C Fold 3
+
+  ROC curve
+
+    Area under curve:
+     0.8791684 
+
+    Curve for scores from  0.000298381  to  0.9736573 
+    ( can be plotted with plot(x) )
+
+XGB mcnamara Model Data B Fold 3
+
+  ROC curve
+
+    Area under curve:
+     0.8863225 
+
+    Curve for scores from  9.271852e-05  to  0.990621 
+    ( can be plotted with plot(x) )
+
+XGB mcnamara Model Data C Fold 3
+
+  ROC curve
+
+    Area under curve:
+     0.886724 
+
+    Curve for scores from  6.027179e-05  to  0.9766588 
+    ( can be plotted with plot(x) )
+
+XGB mcnamara Model Data C, Top 10 Features Only, Fold 3
+
+  ROC curve
+
+    Area under curve:
+     0.8789874 
+
+    Curve for scores from  0.0004783508  to  0.9622839 
+    ( can be plotted with plot(x) )
+
+Loading data for expanded Model Fold 3
+Data Loaded at 1572559674 
+LR expanded Model Data B Fold 3
+
+Warning message in predict.lm(object, newdata, se.fit, scale = 1, type = if (type == :
+“prediction from a rank-deficient fit may be misleading”
+
+
+  ROC curve
+
+    Area under curve:
+     0.8884935 
+
+    Curve for scores from  1.972024e-05  to  0.9959637 
+    ( can be plotted with plot(x) )
+
+LR expanded Model Data C Fold 3
+
+Warning message in predict.lm(object, newdata, se.fit, scale = 1, type = if (type == :
+“prediction from a rank-deficient fit may be misleading”
+
+
+  ROC curve
+
+    Area under curve:
+     0.8913349 
+
+    Curve for scores from  2.113794e-05  to  0.9950177 
+    ( can be plotted with plot(x) )
+
+GLM expanded Model Data B Fold 3
+
+  ROC curve
+
+    Area under curve:
+     0.8864871 
+
+    Curve for scores from  0.0003960605  to  0.9842152 
+    ( can be plotted with plot(x) )
+
+GLM expanded Model Data C Fold 3
+
+  ROC curve
+
+    Area under curve:
+     0.889809 
+
+    Curve for scores from  0.0003320773  to  0.9882503 
+    ( can be plotted with plot(x) )
+
+XGB expanded Model Data B Fold 3
+
+  ROC curve
+
+    Area under curve:
+     0.8988272 
+
+    Curve for scores from  6.852244e-05  to  0.9988104 
+    ( can be plotted with plot(x) )
+
+XGB expanded Model Data C Fold 3
+
+  ROC curve
+
+    Area under curve:
+     0.8980235 
+
+    Curve for scores from  2.888531e-05  to  0.9991851 
+    ( can be plotted with plot(x) )
+
+XGB expanded Model Data C, Top 10 Features Only, Fold 3
+
+  ROC curve
+
+    Area under curve:
+     0.8867618 
+
+    Curve for scores from  0.0003370988  to  0.9696978 
+    ( can be plotted with plot(x) )
+
+Loading data for mcnamara Model Fold 4
+Data Loaded at 1572560273 
+LR mcnamara Model Data B Fold 4
+
+  ROC curve
+
+    Area under curve:
+     0.881675 
+
+    Curve for scores from  0.0001475828  to  0.9766841 
+    ( can be plotted with plot(x) )
+
+LR mcnamara Model Data C Fold 4
+
+  ROC curve
+
+    Area under curve:
+     0.8756052 
+
+    Curve for scores from  0.0001938139  to  0.984418 
+    ( can be plotted with plot(x) )
+
+GLM mcnamara Model Data B Fold 4
+
+  ROC curve
+
+    Area under curve:
+     0.8805292 
+
+    Curve for scores from  0.0003167334  to  0.9703554 
+    ( can be plotted with plot(x) )
+
+GLM mcnamara Model Data C Fold 4
+
+  ROC curve
+
+    Area under curve:
+     0.8738519 
+
+    Curve for scores from  0.0004089398  to  0.9742454 
+    ( can be plotted with plot(x) )
+
+XGB mcnamara Model Data B Fold 4
+
+  ROC curve
+
+    Area under curve:
+     0.8895476 
+
+    Curve for scores from  8.107163e-05  to  0.9923232 
+    ( can be plotted with plot(x) )
+
+XGB mcnamara Model Data C Fold 4
+
+  ROC curve
+
+    Area under curve:
+     0.8840984 
+
+    Curve for scores from  0.0001069461  to  0.9846954 
+    ( can be plotted with plot(x) )
+
+XGB mcnamara Model Data C, Top 10 Features Only, Fold 4
+
+  ROC curve
+
+    Area under curve:
+     0.8757298 
+
+    Curve for scores from  0.0002811347  to  0.9636696 
+    ( can be plotted with plot(x) )
+
+Loading data for expanded Model Fold 4
+Data Loaded at 1572560652 
+LR expanded Model Data B Fold 4
+
+Warning message in predict.lm(object, newdata, se.fit, scale = 1, type = if (type == :
+“prediction from a rank-deficient fit may be misleading”
+
+
+  ROC curve
+
+    Area under curve:
+     0.8926649 
+
+    Curve for scores from  9.849248e-05  to  0.9960056 
+    ( can be plotted with plot(x) )
+
+LR expanded Model Data C Fold 4
+
+Warning message in predict.lm(object, newdata, se.fit, scale = 1, type = if (type == :
+“prediction from a rank-deficient fit may be misleading”
+
+
+  ROC curve
+
+    Area under curve:
+     0.8886465 
+
+    Curve for scores from  0.0001448992  to  0.9970803 
+    ( can be plotted with plot(x) )
+
+GLM expanded Model Data B Fold 4
+
+  ROC curve
+
+    Area under curve:
+     0.8913188 
+
+    Curve for scores from  0.0002898518  to  0.9861692 
+    ( can be plotted with plot(x) )
+
+GLM expanded Model Data C Fold 4
+
+  ROC curve
+
+    Area under curve:
+     0.8867147 
+
+    Curve for scores from  0.0003671274  to  0.9934594 
+    ( can be plotted with plot(x) )
+
+XGB expanded Model Data B Fold 4
+
+  ROC curve
+
+    Area under curve:
+     0.9015912 
+
+    Curve for scores from  6.727035e-05  to  0.9995533 
+    ( can be plotted with plot(x) )
+
+XGB expanded Model Data C Fold 4
+
+  ROC curve
+
+    Area under curve:
+     0.896325 
+
+    Curve for scores from  6.86623e-05  to  0.999817 
+    ( can be plotted with plot(x) )
+
+XGB expanded Model Data C, Top 10 Features Only, Fold 4
+
+  ROC curve
+
+    Area under curve:
+     0.8843279 
+
+    Curve for scores from  0.0003130062  to  0.9890353 
+    ( can be plotted with plot(x) )
+
+Loading data for mcnamara Model Fold 5
+Data Loaded at 1572561429 
+LR mcnamara Model Data B Fold 5
+
+  ROC curve
+
+    Area under curve:
+     0.8784145 
+
+    Curve for scores from  0.000134776  to  0.9822466 
+    ( can be plotted with plot(x) )
+
+LR mcnamara Model Data C Fold 5
+
+  ROC curve
+
+    Area under curve:
+     0.8788915 
+
+    Curve for scores from  0.0001492784  to  0.977532 
+    ( can be plotted with plot(x) )
+
+GLM mcnamara Model Data B Fold 5
+
+  ROC curve
+
+    Area under curve:
+     0.8771279 
+
+    Curve for scores from  0.0003801576  to  0.9679952 
+    ( can be plotted with plot(x) )
+
+GLM mcnamara Model Data C Fold 5
+
+  ROC curve
+
+    Area under curve:
+     0.8775405 
+
+    Curve for scores from  0.0003818159  to  0.9411546 
+    ( can be plotted with plot(x) )
+
+XGB mcnamara Model Data B Fold 5
+
+  ROC curve
+
+    Area under curve:
+     0.8868954 
+
+    Curve for scores from  3.321274e-05  to  0.9917389 
+    ( can be plotted with plot(x) )
+
+XGB mcnamara Model Data C Fold 5
+
+  ROC curve
+
+    Area under curve:
+     0.8884023 
+
+    Curve for scores from  5.388725e-05  to  0.9842265 
+    ( can be plotted with plot(x) )
+
+XGB mcnamara Model Data C, Top 10 Features Only, Fold 5
+
+  ROC curve
+
+    Area under curve:
+     0.8795767 
+
+    Curve for scores from  0.0001098721  to  0.9419142 
+    ( can be plotted with plot(x) )
+
+Loading data for expanded Model Fold 5
+Data Loaded at 1572561944 
+LR expanded Model Data B Fold 5
+
+Warning message in predict.lm(object, newdata, se.fit, scale = 1, type = if (type == :
+“prediction from a rank-deficient fit may be misleading”
+
+
+  ROC curve
+
+    Area under curve:
+     0.8890195 
+
+    Curve for scores from  4.913795e-05  to  0.9972655 
+    ( can be plotted with plot(x) )
+
+LR expanded Model Data C Fold 5
+
+Warning message in predict.lm(object, newdata, se.fit, scale = 1, type = if (type == :
+“prediction from a rank-deficient fit may be misleading”
+
+
+  ROC curve
+
+    Area under curve:
+     0.8906347 
+
+    Curve for scores from  7.825826e-05  to  0.992952 
+    ( can be plotted with plot(x) )
+
+GLM expanded Model Data B Fold 5
+
+  ROC curve
+
+    Area under curve:
+     0.8878765 
+
+    Curve for scores from  0.0003061904  to  0.99226 
+    ( can be plotted with plot(x) )
+
+GLM expanded Model Data C Fold 5
+
+  ROC curve
+
+    Area under curve:
+     0.8890392 
+
+    Curve for scores from  0.000303824  to  0.9853842 
+    ( can be plotted with plot(x) )
+
+XGB expanded Model Data B Fold 5
+
+  ROC curve
+
+    Area under curve:
+     0.898468 
+
+    Curve for scores from  3.338342e-05  to  0.9995847 
+    ( can be plotted with plot(x) )
+
+XGB expanded Model Data C Fold 5
+
+  ROC curve
+
+    Area under curve:
+     0.9004192 
+
+    Curve for scores from  4.045726e-05  to  0.9985934 
+    ( can be plotted with plot(x) )
+
+XGB expanded Model Data C, Top 10 Features Only, Fold 5
+
+  ROC curve
+
+    Area under curve:
+     0.8871797 
+
+    Curve for scores from  0.0001330861  to  0.9441031 
+    ( can be plotted with plot(x) )
+

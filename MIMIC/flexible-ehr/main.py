@@ -10,7 +10,7 @@ import torch
 from flexehr.training import Trainer
 from flexehr.training_pheno import Trainer as Trainer_pheno
 from flexehr.utils.modelIO import load_metadata, load_model, save_model
-from flexehr.models.losses import BCE, BCEWithLogitsLoss, LDAMLoss, LDAMLoss_, Focal_loss
+from flexehr.models.losses import BCE, BCEWithLogitsLoss, LDAMLoss, LDAMLoss_, Focal_loss, Focal_loss_CB
 from flexehr.models.models import MODELS, init_model
 from utils.datasets import get_dataloaders
 from utils.helpers import (get_n_param, new_model_dir, set_seed,
@@ -76,6 +76,9 @@ def parse_arguments(args_to_parse):
     training.add_argument('-annealing_lr',
                           type=float, default=0.1,
                           help='ratio of learning rate to lower to')
+    training.add_argument('-clip',
+                          type=float, default=5.,
+                          help='clip gradient to below this')
 
     # Model options
     model = parser.add_argument_group('Model specfic options')
@@ -183,7 +186,7 @@ def main(args):
         if args.model_type != 'pheno':
             #loss_f = BCE()
             #loss_f = LDAMLoss_(cls_num_list=cls_num_list, max_m=0.5, s=30)
-            loss_f = Focal_loss(cls_num_list=cls_num_list)
+            loss_f = Focal_loss_CB(cls_num_list=cls_num_list)
             
             trainer = Trainer(
                 model, loss_f, args, optimizer,

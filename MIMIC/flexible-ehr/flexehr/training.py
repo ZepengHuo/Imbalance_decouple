@@ -93,25 +93,6 @@ class Trainer():
 
         for epoch in range(epochs):
             storer = defaultdict(list)
-            
-            # freeze backbone, lower lr for classifier after first epoch
-            if self.args.annealing_lr and epoch == 0:
-                #for p in self.model.gru.parameters():
-                #        p.requires_grad = False
-            
-                #for g in self.optimizer.param_groups:
-                #    g['lr'] = g['lr'] * self.args.annealing_lr
-                    
-                if self.args.train_rule == 'DRW':
-                    
-                    #idx = epoch // 1
-                    idx = 1
-                    betas = [0, 0.9999]
-                    effective_num = 1.0 - np.power(betas[idx], self.loss_f.cls_num_list)
-                    per_cls_weights = (1.0 - betas[idx]) / np.array(effective_num)
-                    per_cls_weights = per_cls_weights / np.sum(per_cls_weights) * len(self.loss_f.cls_num_list)
-                    per_cls_weights = torch.FloatTensor(per_cls_weights).cuda(self.args.gpu_num)
-                    self.weight = per_cls_weights    
 
             self.model.train()
             t_loss = self._train_epoch(train_loader, storer)
@@ -143,7 +124,7 @@ class Trainer():
 
         with trange(len(data_loader)) as t:
             for data, y_true in data_loader:
-                #print(data[torch.where(data != data)])
+
                 data = data.to(self.device)
                 y_true = y_true.to(self.device)
 
@@ -154,6 +135,9 @@ class Trainer():
 
                 self.optimizer.zero_grad()
                 iter_loss.backward()
+                
+                torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.args.clip)
+                
                 self.optimizer.step()
 
                 if self.p_bar:
